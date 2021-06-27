@@ -9,7 +9,7 @@
     "default_icon": "enabled.png",
     "default_title": "History Enabled"
   },
-  "description": "Temporary Disable/Enable Browser History",
+  "description": "Selective/Temporary Disable/Enable Browser History",
   "homepage_url": "https://github.com/HedCET/disable-history/wiki",
   "icons": {
     "48": "enabled.png"
