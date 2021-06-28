@@ -8,13 +8,13 @@ chrome.browserAction.onClicked.addListener(async () => {
 
     history = undefined; // temporary disable history
 
-    await chrome.browserAction.setIcon(enabledIcon);
-    await chrome.browserAction.setTitle({ title: "History Enabled" });
+    chrome.browserAction.setIcon(enabledIcon);
+    chrome.browserAction.setTitle({ title: "History Enabled" });
   } else {
     history = new Map();
 
-    await chrome.browserAction.setIcon(disabledIcon);
-    await chrome.browserAction.setTitle({ title: "History Disabled" });
+    chrome.browserAction.setIcon(disabledIcon);
+    chrome.browserAction.setTitle({ title: "History Disabled" });
   }
 });
 
@@ -85,7 +85,7 @@ const _enabledIcon = async (oldValue, newValue) => {
     : { path: "enabled.png" };
 
   if (oldValue !== newValue && !(history instanceof Map))
-    await chrome.browserAction.setIcon(enabledIcon);
+    chrome.browserAction.setIcon(enabledIcon);
 };
 
 let disabledIcon;
@@ -97,7 +97,7 @@ const _disabledIcon = async (oldValue, newValue) => {
     : { path: "disabled.png" };
 
   if (oldValue !== newValue && history instanceof Map)
-    await chrome.browserAction.setIcon(disabledIcon);
+    chrome.browserAction.setIcon(disabledIcon);
 };
 
 ////////////////////////////////////////////////////////////
@@ -106,8 +106,30 @@ let disabledPattern;
 
 // onChange handler
 const _disabledPattern = (oldValue, newValue) => {
-  if (oldValue !== newValue && newValue) {
-    disabledPattern = new RegExp(newValue);
+  disabledPattern = newValue ? new RegExp(`${newValue}`) : undefined;
+
+  if (disabledPattern) {
+    const _handleHistory = (from, to) => {
+      const endTime = typeof to === "number" && 0 < to ? to : new Date().getTime();
+      const startTime = endTime - 86400000;
+
+      if (typeof from !== "number" || to <= from) from = endTime - 7776000000;
+      if (from < 0) from = 0;
+      if (startTime < from) startTime = from;
+
+      chrome.history.search({ endTime, maxResults: 86400, startTime, text: "" },
+        async (historyItems) => {
+          for (const { url } of historyItems)
+            if (url?.match(disabledPattern))
+              await chrome.history.deleteUrl({ url });
+
+          if (historyItems.length && from < startTime)
+            _handleHistory(from, startTime);
+        });
+    };
+
+    // lightweight recursion
+    _handleHistory();
   }
 };
 
@@ -121,10 +143,10 @@ chrome.history.onVisited.addListener(({ url }) => {
 
 // initialization
 chrome.storage.sync.get(["enabledIcon", "disabledIcon", "disabledPattern"],
-  ({ enabledIcon, disabledIcon, disabledPattern }) => {
+  ({ enabledIcon, disabledIcon, disabledPattern: dP }) => {
     _enabledIcon(undefined, enabledIcon);
     _disabledIcon(undefined, disabledIcon);
-    _disabledPattern(undefined, disabledPattern);
+    disabledPattern = dP ? new RegExp(`${dP}`) : undefined; // to avoid initial recursion
   });
 
 // synchronization

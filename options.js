@@ -22,9 +22,7 @@ document.getElementById("changeDisabledIcon").onclick = () => {
   uploadImage.click();
 };
 
-uploadImage.addEventListener("change", async (e) => {
-  updateStatus(uploadImageStatus, "uploading");
-
+uploadImage.addEventListener("change", (e) => {
   const [file] = e.target.files;
 
   const fileReader = new FileReader;
@@ -35,7 +33,7 @@ uploadImage.addEventListener("change", async (e) => {
     image.onerror = () => updateStatus(uploadImageStatus, "invalid image", "text-red-500");
 
     image.onload = () => {
-      await chrome.storage.sync.set({ [uploadType]: e.target.result });
+      chrome.storage.sync.set({ [uploadType]: e.target.result });
       updateStatus(uploadImageStatus, "success", "text-green-500");
     };
 
@@ -44,6 +42,27 @@ uploadImage.addEventListener("change", async (e) => {
 
   fileReader.readAsDataURL(file);
 });
+
+////////////////////////////////////////////////////////////
+
+const disabledPattern = document.getElementById("disabledPattern");
+
+const updateDisabledPattern = document.getElementById("updateDisabledPattern");
+const updateDisabledPatternStatus = document.getElementById("updateDisabledPatternStatus");
+
+chrome.storage.sync.get(["disabledPattern"], ({ disabledPattern: dP }) => {
+  disabledPattern.value = dP ?? "";
+});
+
+document.getElementById("updateDisabledPattern").onclick = () => {
+  try {
+    new RegExp(disabledPattern.value);
+    chrome.storage.sync.set({ disabledPattern: disabledPattern.value });
+    updateStatus(updateDisabledPatternStatus, "success", "text-green-500");
+  } catch (e) {
+    updateStatus(uploadImageStatus, "invalid disabledPattern", "text-red-500");
+  }
+};
 
 ////////////////////////////////////////////////////////////
 
