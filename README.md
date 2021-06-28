@@ -1,2 +1,2 @@
-### History Enable/Disable Button
-Selective/Temporary Enable/Disable Browser History
+### History On/Off Switch
+Selectively/Temporary Enable/Disable Browser History

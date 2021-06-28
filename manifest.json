@@ -7,13 +7,13 @@
     "default_icon": "enabled.png",
     "default_title": "History Enabled"
   },
-  "description": "Selective/Temporary Enable/Disable Browser History",
+  "description": "Selectively/Temporary Enable/Disable Browser History",
   "homepage_url": "https://github.com/HedCET/disable-history/wiki",
   "icons": {
     "48": "enabled.png"
   },
   "manifest_version": 2,
-  "name": "History Enable/Disable Button",
+  "name": "History On/Off Switch",
   "offline_enabled": true,
   "options_ui": {
     "chrome_style": true,

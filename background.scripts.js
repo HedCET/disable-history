@@ -3,10 +3,10 @@ let history = undefined; // temporary tabs history
 // update history disabled/enabled status
 chrome.browserAction.onClicked.addListener(async () => {
   if (history instanceof Map) {
-    for (const [tabId] of history) // remove all
+    for (const [tabId] of history)
       await removeFromHistory(tabId);
 
-    history = undefined; // temporary disable history
+    history = undefined;
 
     chrome.browserAction.setIcon(enabledIcon);
     chrome.browserAction.setTitle({ title: "History Enabled" });
@@ -22,7 +22,7 @@ chrome.browserAction.onClicked.addListener(async () => {
 const addToHistory = (tabId, url) => {
   if (history instanceof Map && url) {
     const entries = history.get(tabId);
-    if (entries instanceof Set) entries.add(url); // unique entries
+    if (entries instanceof Set) entries.add(url);
     else history.set(tabId, new Set([url]));
   }
 }
@@ -40,21 +40,20 @@ const removeFromHistory = async (tabId) => {
     }
 }
 
-// triggers
 chrome.tabs.onCreated.addListener(({ id, url }) => addToHistory(id, url));
 chrome.tabs.onUpdated.addListener((tabId, { url }) => addToHistory(tabId, url));
 chrome.tabs.onReplaced.addListener((addedTabId, removedTabId) => removeFromHistory(removedTabId));
 chrome.tabs.onRemoved.addListener((tabId) => removeFromHistory(tabId));
 
-////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
-// temporarily disabled
+// download history handler
 chrome.downloads.onChanged.addListener(({ id, state }) => {
   if (history instanceof Map && state?.current === "complete")
     chrome.downloads.erase({ id });
 });
 
-////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 let disabledPattern;
 
@@ -82,20 +81,18 @@ const _disabledPattern = (oldValue, newValue) => {
         });
     };
 
-    // lightweight recursion
     _handleHistory();
   }
 };
 
-// permanently disabled by regexp
+// selectively disabled by regexp
 chrome.history.onVisited.addListener(({ url }) => {
   if (disabledPattern && url?.match(disabledPattern))
     chrome.history.deleteUrl({ url });
 });
 
-////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
-// message handler
 const _handleMessage = async ({ type }, sender, sendResponse) => {
   switch (type) {
     // delete tracked history
@@ -107,7 +104,7 @@ const _handleMessage = async ({ type }, sender, sendResponse) => {
       sendResponse(true);
       break;
 
-    //undo tracked history
+    // undo tracked history
     case "undoTrackedHistory":
       if (history instanceof Map)
         history = new Map();
@@ -117,13 +114,12 @@ const _handleMessage = async ({ type }, sender, sendResponse) => {
   }
 };
 
-// inbound connections
+// inbound messages
 chrome.runtime.onMessage.addListener(_handleMessage);
 // chrome.runtime.onMessageExternal.addListener(_handleMessage);
 
-////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
-// dataURL match pattern
 const matchDataURL = /^data:((?:\w+\/(?:(?!;).)+)?)((?:;[\w\W]*?[^;])*),(.+)$/;
 
 // dataURL to imageData
@@ -147,7 +143,7 @@ const toImageData = (dataURL) => {
       else reject(new Error("invalid imageData"))
     };
 
-    image.src = dataURL; // validate image
+    image.src = dataURL; // validation
   });
 };
 
@@ -175,9 +171,8 @@ const _disabledIcon = async (oldValue, newValue) => {
     chrome.browserAction.setIcon(disabledIcon);
 };
 
-////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
-// initialization
 chrome.storage.sync.get(["enabledIcon", "disabledIcon", "disabledPattern"],
   ({ enabledIcon, disabledIcon, disabledPattern: dP }) => {
     _enabledIcon(undefined, enabledIcon);
@@ -185,7 +180,6 @@ chrome.storage.sync.get(["enabledIcon", "disabledIcon", "disabledPattern"],
     disabledPattern = dP ? new RegExp(dP) : undefined; // to avoid initial recursion
   });
 
-// synchronization
 chrome.storage.onChanged.addListener(({ enabledIcon, disabledIcon, disabledPattern }) => {
   if (enabledIcon) _enabledIcon(enabledIcon.oldValue, enabledIcon.newValue);
   if (disabledIcon) _disabledIcon(disabledIcon.oldValue, disabledIcon.newValue);

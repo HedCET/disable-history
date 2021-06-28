@@ -5,7 +5,7 @@ const updateStatus = (element, innerText, className) => {
   }
 };
 
-////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 let uploadType;
 
@@ -37,13 +37,13 @@ uploadImage.addEventListener("change", (e) => {
       updateStatus(uploadImageStatus, "success", "text-green-500");
     };
 
-    image.src = e.target.result; // validate image
+    image.src = e.target.result; // validation
   };
 
   fileReader.readAsDataURL(file);
 });
 
-////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 const disabledPattern = document.getElementById("disabledPattern");
 const disabledPatternStatus = document.getElementById("disabledPatternStatus");
@@ -61,7 +61,7 @@ document.getElementById("updateDisabledPattern").onclick = () => {
   }
 };
 
-////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 const trackedHistoryStatus = document.getElementById("trackedHistoryStatus");
 
