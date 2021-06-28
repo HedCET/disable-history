@@ -1,18 +1,3 @@
-let settings; // global settings
-
-// initialize
-chrome.storage.sync.get(['options'], ({ options }) => {
-  settings = Object.assign({}, options);
-});
-
-// sync
-chrome.storage.onChanged.addListener(({ options }) => {
-  if (options?.newValue)
-    settings = Object.assign({}, settings, options.newValue);
-});
-
-////////////////////////////////////////////////////////////
-
 let history = undefined; // temporary tabs history
 
 // update history disabled/enabled status
@@ -21,14 +6,14 @@ chrome.browserAction.onClicked.addListener(async () => {
     for (const [tabId] of history) // remove all
       await removeFromHistory(tabId);
 
-    history = undefined; // disable extension
+    history = undefined; // temporary disable history
 
-    await chrome.browserAction.setIcon({ path: "enabled.png" });
+    await chrome.browserAction.setIcon(enabledIcon);
     await chrome.browserAction.setTitle({ title: "History Enabled" });
   } else {
     history = new Map();
 
-    await chrome.browserAction.setIcon({ path: "disabled.png" });
+    await chrome.browserAction.setIcon(disabledIcon);
     await chrome.browserAction.setTitle({ title: "History Disabled" });
   }
 });
@@ -63,12 +48,89 @@ chrome.tabs.onRemoved.addListener((tabId) => removeFromHistory(tabId));
 
 ////////////////////////////////////////////////////////////
 
+// dataURL match pattern
+const matchDataURL = /^data:((?:\w+\/(?:(?!;).)+)?)((?:;[\w\W]*?[^;])*),(.+)$/;
+
+// dataURL to imageData
+const toImageData = (dataURL) => {
+  return new Promise((resolve, reject) => {
+    if (!dataURL) return reject();
+
+    const image = new Image();
+    image.onerror = (e) => reject(e);
+
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.height = image.height;
+      canvas.width = image.width;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(image, 0, 0);
+      const imageData = ctx.getImageData(0, 0, image.width, image.height);
+
+      if (imageData instanceof ImageData) resolve(imageData);
+      else reject(new Error('invalid imageData'))
+    };
+
+    // validate image
+    image.src = dataURL;
+  });
+};
+
+let enabledIcon;
+
+// onChange handler
+const _enabledIcon = async (oldValue, newValue) => {
+  enabledIcon = (newValue && `${newValue}`.match(matchDataURL))
+    ? { imageData: await toImageData(newValue) }
+    : { path: "enabled.png" };
+
+  if (oldValue !== newValue && !(history instanceof Map))
+    await chrome.browserAction.setIcon(enabledIcon);
+};
+
+let disabledIcon;
+
+// onChange handler
+const _disabledIcon = async (oldValue, newValue) => {
+  disabledIcon = (newValue && `${newValue}`.match(matchDataURL))
+    ? { imageData: await toImageData(newValue) }
+    : { path: "disabled.png" };
+
+  if (oldValue !== newValue && history instanceof Map)
+    await chrome.browserAction.setIcon(disabledIcon);
+};
+
+////////////////////////////////////////////////////////////
+
+let disabledPattern;
+
+// onChange handler
+const _disabledPattern = (oldValue, newValue) => {
+  if (oldValue !== newValue && newValue) {
+    disabledPattern = new RegExp(newValue);
+  }
+};
+
 // disabled by regexp
 chrome.history.onVisited.addListener(({ url }) => {
-  if (url?.match(new RegExp(settings?.disabledPatterns ?? "chrome://new-tab-page")))
+  if (disabledPattern && url?.match(disabledPattern))
     chrome.history.deleteUrl({ url });
 });
 
 ////////////////////////////////////////////////////////////
 
+// initialization
+chrome.storage.sync.get(["enabledIcon", "disabledIcon", "disabledPattern"],
+  ({ enabledIcon, disabledIcon, disabledPattern }) => {
+    _enabledIcon(undefined, enabledIcon);
+    _disabledIcon(undefined, disabledIcon);
+    _disabledPattern(undefined, disabledPattern);
+  });
 
+// synchronization
+chrome.storage.onChanged.addListener(({ enabledIcon, disabledIcon, disabledPattern }) => {
+  if (enabledIcon) _enabledIcon(enabledIcon.oldValue, enabledIcon.newValue);
+  if (disabledIcon) _disabledIcon(disabledIcon.oldValue, disabledIcon.newValue);
+  if (disabledPattern) _disabledPattern(disabledPattern.oldValue, disabledPattern.newValue);
+});

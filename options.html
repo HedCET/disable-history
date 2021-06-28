@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <title>History Enable/Disable Button</title>
+  <link rel="stylesheet" href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" />
+</head>
+
+<body class="font-sans">
+  <input accept="image/*" hidden id="uploadImage" type="file" />
+
+  <div class="px-4">
+    <div class="m-1 text-gray-300 text-right text-sm">enabled/disabled icon</div>
+
+    <div class="flex flex-row flex-wrap justify-end">
+      <button class="mx-1" id="changeEnabledIcon">CHANGE ENABLED ICON</button>
+      <button class="mx-1" id="changeDisabledIcon">CHANGE DISABLED ICON</button>
+    </div>
+
+    <div class="m-1 text-gray-300 text-right text-xs">
+      &nbsp;<span id="uploadImageStatus"></span>
+    </div>
+  </div>
+
+  <div class="px-4">
+    <div class="m-1 text-gray-300 text-right text-sm">disabled history pattern</div>
+
+    <div class="flex flex-row flex-wrap justify-end">
+      <input class="flex-grow mx-1" id="pattern" placeholder="ex - //twitter.com/.*|//pornhub.com/.*" />
+      <button class="mx-1" id="updateDisabledPattern">UPDATE</button>
+    </div>
+
+    <div class="m-1 text-gray-300 text-right text-xs">
+      &nbsp;<span id="updateDisabledPatternStatus"></span>
+    </div>
+  </div>
+
+  <div class="px-4 pb-2">
+    <div class="m-1 text-gray-300 text-right text-sm">currently tracked tabs/downloads history</div>
+
+    <div class="flex flex-row flex-wrap justify-end">
+      <button class="mx-1" id="deleteTrackedHistory">DELETE</button>
+      <button class="mx-1" id="undoTrackedHistory">UNDO</button>
+    </div>
+
+    <div class="m-1 text-gray-300 text-right text-xs">
+      &nbsp;<span id="trackedHistoryStatus"></span>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+
+</html>
