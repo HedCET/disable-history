@@ -46,23 +46,39 @@ uploadImage.addEventListener("change", (e) => {
 ////////////////////////////////////////////////////////////
 
 const disabledPattern = document.getElementById("disabledPattern");
-
-const updateDisabledPattern = document.getElementById("updateDisabledPattern");
-const updateDisabledPatternStatus = document.getElementById("updateDisabledPatternStatus");
+const disabledPatternStatus = document.getElementById("disabledPatternStatus");
 
 chrome.storage.sync.get(["disabledPattern"],
   ({ disabledPattern: dP }) => disabledPattern.value = dP ?? "");
 
-updateDisabledPattern.onclick = () => {
+document.getElementById("updateDisabledPattern").onclick = () => {
   try {
     new RegExp(disabledPattern.value); // validation
     chrome.storage.sync.set({ disabledPattern: disabledPattern.value });
-    updateStatus(updateDisabledPatternStatus, "success", "text-green-500");
+    updateStatus(disabledPatternStatus, "success", "text-green-500");
   } catch (e) {
-    updateStatus(updateDisabledPatternStatus, "invalid disabledPattern", "text-red-500");
+    updateStatus(disabledPatternStatus, "invalid disabledPattern", "text-red-500");
   }
 };
 
 ////////////////////////////////////////////////////////////
 
+const trackedHistoryStatus = document.getElementById("trackedHistoryStatus");
 
+document.getElementById("deleteTrackedHistory").onclick = () => {
+  chrome.runtime.sendMessage(chrome.runtime.id,
+    { type: "deleteTrackedHistory" },
+    (status) => {
+      if (status) updateStatus(trackedHistoryStatus, "success", "text-green-500");
+      else updateStatus(trackedHistoryStatus, "failed", "text-red-500");
+    });
+};
+
+document.getElementById("undoTrackedHistory").onclick = () => {
+  chrome.runtime.sendMessage(chrome.runtime.id,
+    { type: "undoTrackedHistory" },
+    (status) => {
+      if (status) updateStatus(trackedHistoryStatus, "success", "text-green-500");
+      else updateStatus(trackedHistoryStatus, "failed", "text-red-500");
+    });
+};

@@ -60,7 +60,7 @@ let disabledPattern;
 
 // onChange handler
 const _disabledPattern = (oldValue, newValue) => {
-  disabledPattern = newValue ? new RegExp(`${newValue}`) : undefined;
+  disabledPattern = newValue ? new RegExp(newValue) : undefined;
 
   if (disabledPattern) {
     const _handleHistory = (from, to) => {
@@ -95,6 +95,34 @@ chrome.history.onVisited.addListener(({ url }) => {
 
 ////////////////////////////////////////////////////////////
 
+// message handler
+const _handleMessage = async ({ type }, sender, sendResponse) => {
+  switch (type) {
+    // delete tracked history
+    case "deleteTrackedHistory":
+      if (history instanceof Map)
+        for (const [tabId] of history)
+          await removeFromHistory(tabId);
+
+      sendResponse(true);
+      break;
+
+    //undo tracked history
+    case "undoTrackedHistory":
+      if (history instanceof Map)
+        history = new Map();
+
+      sendResponse(true);
+      break;
+  }
+};
+
+// inbound connections
+chrome.runtime.onMessage.addListener(_handleMessage);
+// chrome.runtime.onMessageExternal.addListener(_handleMessage);
+
+////////////////////////////////////////////////////////////
+
 // dataURL match pattern
 const matchDataURL = /^data:((?:\w+\/(?:(?!;).)+)?)((?:;[\w\W]*?[^;])*),(.+)$/;
 
@@ -104,7 +132,7 @@ const toImageData = (dataURL) => {
     if (!dataURL) return reject();
 
     const image = new Image();
-    image.onerror = () => reject(new Error('invalid image'));
+    image.onerror = () => reject(new Error("invalid image"));
 
     image.onload = () => {
       const canvas = document.createElement("canvas");
@@ -116,7 +144,7 @@ const toImageData = (dataURL) => {
       const imageData = ctx.getImageData(0, 0, image.width, image.height);
 
       if (imageData instanceof ImageData) resolve(imageData);
-      else reject(new Error('invalid imageData'))
+      else reject(new Error("invalid imageData"))
     };
 
     image.src = dataURL; // validate image
@@ -154,7 +182,7 @@ chrome.storage.sync.get(["enabledIcon", "disabledIcon", "disabledPattern"],
   ({ enabledIcon, disabledIcon, disabledPattern: dP }) => {
     _enabledIcon(undefined, enabledIcon);
     _disabledIcon(undefined, disabledIcon);
-    disabledPattern = dP ? new RegExp(`${dP}`) : undefined; // to avoid initial recursion
+    disabledPattern = dP ? new RegExp(dP) : undefined; // to avoid initial recursion
   });
 
 // synchronization
