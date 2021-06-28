@@ -49,8 +49,12 @@ chrome.tabs.onRemoved.addListener((tabId) => removeFromHistory(tabId));
 
 // download history handler
 chrome.downloads.onChanged.addListener(({ id, state }) => {
-  if (history instanceof Map && state?.current === "complete")
-    chrome.downloads.erase({ id });
+  if (state?.current === "complete")
+    if (history instanceof Map) chrome.downloads.erase({ id });
+    else chrome.downloads.search({ id }, ([{ url }]) => {
+      if (disabledPattern && url?.match(disabledPattern))
+        chrome.downloads.erase({ id });
+    });
 });
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -58,34 +62,9 @@ chrome.downloads.onChanged.addListener(({ id, state }) => {
 let disabledPattern;
 
 // onChange handler
-const _disabledPattern = (oldValue, newValue) => {
+const _disabledPattern = (oldValue, newValue) =>
   disabledPattern = newValue ? new RegExp(newValue) : undefined;
 
-  if (disabledPattern) {
-    const _handleHistory = (from, to) => {
-      const endTime = typeof to === "number" && 0 < to ? to : new Date().getTime();
-      const startTime = endTime - 86400000;
-
-      if (typeof from !== "number" || to <= from) from = endTime - 7776000000;
-      if (from < 0) from = 0;
-      if (startTime < from) startTime = from;
-
-      chrome.history.search({ endTime, maxResults: 86400, startTime, text: "" },
-        async (historyItems) => {
-          for (const { url } of historyItems)
-            if (url?.match(disabledPattern))
-              await chrome.history.deleteUrl({ url });
-
-          if (historyItems.length && from < startTime)
-            _handleHistory(from, startTime);
-        });
-    };
-
-    _handleHistory();
-  }
-};
-
-// selectively disabled by regexp
 chrome.history.onVisited.addListener(({ url }) => {
   if (disabledPattern && url?.match(disabledPattern))
     chrome.history.deleteUrl({ url });
@@ -95,7 +74,7 @@ chrome.history.onVisited.addListener(({ url }) => {
 
 const _handleMessage = async ({ type }, sender, sendResponse) => {
   switch (type) {
-    // delete tracked history
+    // delete tabs history
     case "deleteTrackedHistory":
       if (history instanceof Map)
         for (const [tabId] of history)
@@ -104,7 +83,7 @@ const _handleMessage = async ({ type }, sender, sendResponse) => {
       sendResponse(true);
       break;
 
-    // undo tracked history
+    // undo tabs history
     case "undoTrackedHistory":
       if (history instanceof Map)
         history = new Map();
@@ -174,10 +153,10 @@ const _disabledIcon = async (oldValue, newValue) => {
 ////////////////////////////////////////////////////////////////////////////////
 
 chrome.storage.sync.get(["enabledIcon", "disabledIcon", "disabledPattern"],
-  ({ enabledIcon, disabledIcon, disabledPattern: dP }) => {
+  ({ enabledIcon, disabledIcon, disabledPattern }) => {
     _enabledIcon(undefined, enabledIcon);
     _disabledIcon(undefined, disabledIcon);
-    disabledPattern = dP ? new RegExp(dP) : undefined; // to avoid initial recursion
+    _disabledPattern(undefined, disabledPattern);
   });
 
 chrome.storage.onChanged.addListener(({ enabledIcon, disabledIcon, disabledPattern }) => {
