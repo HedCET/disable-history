@@ -48,6 +48,53 @@ chrome.tabs.onRemoved.addListener((tabId) => removeFromHistory(tabId));
 
 ////////////////////////////////////////////////////////////
 
+// temporarily disabled
+chrome.downloads.onChanged.addListener(({ id, state }) => {
+  if (history instanceof Map && state?.current === "complete")
+    chrome.downloads.erase({ id });
+});
+
+////////////////////////////////////////////////////////////
+
+let disabledPattern;
+
+// onChange handler
+const _disabledPattern = (oldValue, newValue) => {
+  disabledPattern = newValue ? new RegExp(`${newValue}`) : undefined;
+
+  if (disabledPattern) {
+    const _handleHistory = (from, to) => {
+      const endTime = typeof to === "number" && 0 < to ? to : new Date().getTime();
+      const startTime = endTime - 86400000;
+
+      if (typeof from !== "number" || to <= from) from = endTime - 7776000000;
+      if (from < 0) from = 0;
+      if (startTime < from) startTime = from;
+
+      chrome.history.search({ endTime, maxResults: 86400, startTime, text: "" },
+        async (historyItems) => {
+          for (const { url } of historyItems)
+            if (url?.match(disabledPattern))
+              await chrome.history.deleteUrl({ url });
+
+          if (historyItems.length && from < startTime)
+            _handleHistory(from, startTime);
+        });
+    };
+
+    // lightweight recursion
+    _handleHistory();
+  }
+};
+
+// permanently disabled by regexp
+chrome.history.onVisited.addListener(({ url }) => {
+  if (disabledPattern && url?.match(disabledPattern))
+    chrome.history.deleteUrl({ url });
+});
+
+////////////////////////////////////////////////////////////
+
 // dataURL match pattern
 const matchDataURL = /^data:((?:\w+\/(?:(?!;).)+)?)((?:;[\w\W]*?[^;])*),(.+)$/;
 
@@ -99,45 +146,6 @@ const _disabledIcon = async (oldValue, newValue) => {
   if (oldValue !== newValue && history instanceof Map)
     chrome.browserAction.setIcon(disabledIcon);
 };
-
-////////////////////////////////////////////////////////////
-
-let disabledPattern;
-
-// onChange handler
-const _disabledPattern = (oldValue, newValue) => {
-  disabledPattern = newValue ? new RegExp(`${newValue}`) : undefined;
-
-  if (disabledPattern) {
-    const _handleHistory = (from, to) => {
-      const endTime = typeof to === "number" && 0 < to ? to : new Date().getTime();
-      const startTime = endTime - 86400000;
-
-      if (typeof from !== "number" || to <= from) from = endTime - 7776000000;
-      if (from < 0) from = 0;
-      if (startTime < from) startTime = from;
-
-      chrome.history.search({ endTime, maxResults: 86400, startTime, text: "" },
-        async (historyItems) => {
-          for (const { url } of historyItems)
-            if (url?.match(disabledPattern))
-              await chrome.history.deleteUrl({ url });
-
-          if (historyItems.length && from < startTime)
-            _handleHistory(from, startTime);
-        });
-    };
-
-    // lightweight recursion
-    _handleHistory();
-  }
-};
-
-// disabled by regexp
-chrome.history.onVisited.addListener(({ url }) => {
-  if (disabledPattern && url?.match(disabledPattern))
-    chrome.history.deleteUrl({ url });
-});
 
 ////////////////////////////////////////////////////////////
 
