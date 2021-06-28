@@ -57,7 +57,7 @@ const toImageData = (dataURL) => {
     if (!dataURL) return reject();
 
     const image = new Image();
-    image.onerror = (e) => reject(e);
+    image.onerror = () => reject(new Error('invalid image'));
 
     image.onload = () => {
       const canvas = document.createElement("canvas");
@@ -72,8 +72,7 @@ const toImageData = (dataURL) => {
       else reject(new Error('invalid imageData'))
     };
 
-    // validate image
-    image.src = dataURL;
+    image.src = dataURL; // validate image
   });
 };
 

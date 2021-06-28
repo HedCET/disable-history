@@ -22,35 +22,27 @@ document.getElementById("changeDisabledIcon").onclick = () => {
   uploadImage.click();
 };
 
-uploadImage.addEventListener("change", (e) => {
-  updateStatus(uploadImageStatus);
+uploadImage.addEventListener("change", async (e) => {
+  updateStatus(uploadImageStatus, "uploading");
 
   const [file] = e.target.files;
-  // const [file] = uploadImage.files;
 
-  if (file?.type.includes("image")) {
-    updateStatus(uploadImageStatus, "uploading");
+  const fileReader = new FileReader;
+  fileReader.onerror = () => updateStatus(uploadImageStatus, "invalid file", "text-red-500");
 
-    const fileReader = new FileReader;
-    fileReader.onerror = (e) => updateStatus(uploadImageStatus, e.message, "text-red-500");
+  fileReader.onload = (e) => {
+    const image = new Image();
+    image.onerror = () => updateStatus(uploadImageStatus, "invalid image", "text-red-500");
 
-    fileReader.onload = (e) => {
-      const image = new Image();
-      image.onerror = (e) => updateStatus(uploadImageStatus, e.message, "text-red-500");
-
-      image.onload = () => {
-        chrome.storage.sync.set({ [uploadType]: e.target.result });
-        updateStatus(uploadImageStatus, "success", "text-green-500");
-      };
-
-      // validate image
-      image.src = e.target.result;
+    image.onload = () => {
+      await chrome.storage.sync.set({ [uploadType]: e.target.result });
+      updateStatus(uploadImageStatus, "success", "text-green-500");
     };
 
-    fileReader.readAsDataURL(file);
-  } else updateStatus(uploadImageStatus, "invalid image file", "text-red-500");
+    image.src = e.target.result; // validate image
+  };
 
-  uploadImage.value = "";
+  fileReader.readAsDataURL(file);
 });
 
 ////////////////////////////////////////////////////////////
