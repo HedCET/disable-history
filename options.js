@@ -50,17 +50,16 @@ const disabledPattern = document.getElementById("disabledPattern");
 const updateDisabledPattern = document.getElementById("updateDisabledPattern");
 const updateDisabledPatternStatus = document.getElementById("updateDisabledPatternStatus");
 
-chrome.storage.sync.get(["disabledPattern"], ({ disabledPattern: dP }) => {
-  disabledPattern.value = dP ?? "";
-});
+chrome.storage.sync.get(["disabledPattern"],
+  ({ disabledPattern: dP }) => disabledPattern.value = dP ?? "");
 
-document.getElementById("updateDisabledPattern").onclick = () => {
+updateDisabledPattern.onclick = () => {
   try {
-    new RegExp(disabledPattern.value);
+    new RegExp(disabledPattern.value); // validation
     chrome.storage.sync.set({ disabledPattern: disabledPattern.value });
     updateStatus(updateDisabledPatternStatus, "success", "text-green-500");
   } catch (e) {
-    updateStatus(uploadImageStatus, "invalid disabledPattern", "text-red-500");
+    updateStatus(updateDisabledPatternStatus, "invalid disabledPattern", "text-red-500");
   }
 };
 
