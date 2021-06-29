@@ -57,10 +57,11 @@ document.getElementById("applyAndUpdateBlockedPattern").onclick = () => {
     applyBlockedPattern(bP);
 
     // apply in downloads
-    chrome.downloads.search({ limit: 0, state: "complete", urlRegex: blockedPattern.value },
+    chrome.downloads.search({ limit: 0, urlRegex: blockedPattern.value },
       (downloadItems) => {
-        for (const { id } of downloadItems)
-          chrome.downloads.erase({ id });
+        for (const { id, state } of downloadItems)
+          if (['interrupted', 'complete'].includes(state))
+            chrome.downloads.erase({ id });
       });
 
     chrome.storage.sync.set({ blockedPattern: blockedPattern.value });

@@ -108,7 +108,7 @@ chrome.tabs.onRemoved.addListener((tabId) => removeFromHistory(tabId));
 
 // download history handler
 chrome.downloads.onChanged.addListener(({ id, state }) => {
-  if (state?.current === "complete")
+  if (['interrupted', 'complete'].includes(state?.current))
     if (historyDisabled) chrome.downloads.erase({ id });
     else if (blockedPattern)
       chrome.downloads.search({ id }, ([{ url }]) => {
