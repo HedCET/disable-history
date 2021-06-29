@@ -7,18 +7,18 @@ const updateStatus = (element, innerText, className) => {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-let uploadType;
+let iconType;
 
 const uploadImage = document.getElementById("uploadImage");
 const uploadImageStatus = document.getElementById("uploadImageStatus");
 
 document.getElementById("changeEnabledIcon").onclick = () => {
-  uploadType = "enabledIcon";
+  iconType = "enabledIcon";
   uploadImage.click();
 };
 
 document.getElementById("changeDisabledIcon").onclick = () => {
-  uploadType = "disabledIcon";
+  iconType = "disabledIcon";
   uploadImage.click();
 };
 
@@ -33,7 +33,7 @@ uploadImage.addEventListener("change", (e) => {
     image.onerror = () => updateStatus(uploadImageStatus, "invalid image", "text-red-500");
 
     image.onload = () => {
-      chrome.storage.sync.set({ [uploadType]: e.target.result });
+      chrome.storage.sync.set({ [iconType]: e.target.result });
       updateStatus(uploadImageStatus, "success", "text-green-500");
     };
 
@@ -63,22 +63,13 @@ document.getElementById("updateDisabledPattern").onclick = () => {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const trackedHistoryStatus = document.getElementById("trackedHistoryStatus");
+const activeHistoryStatus = document.getElementById("activeHistoryStatus");
 
-document.getElementById("deleteTrackedHistory").onclick = () => {
+document.getElementById("clearActiveHistory").onclick = () => {
   chrome.runtime.sendMessage(chrome.runtime.id,
-    { type: "deleteTrackedHistory" },
+    { type: "clearActiveHistory" },
     (status) => {
-      if (status) updateStatus(trackedHistoryStatus, "success", "text-green-500");
-      else updateStatus(trackedHistoryStatus, "failed", "text-red-500");
-    });
-};
-
-document.getElementById("undoTrackedHistory").onclick = () => {
-  chrome.runtime.sendMessage(chrome.runtime.id,
-    { type: "undoTrackedHistory" },
-    (status) => {
-      if (status) updateStatus(trackedHistoryStatus, "success", "text-green-500");
-      else updateStatus(trackedHistoryStatus, "failed", "text-red-500");
+      if (status) updateStatus(activeHistoryStatus, "success", "text-green-500");
+      else updateStatus(activeHistoryStatus, "failed", "text-red-500");
     });
 };
