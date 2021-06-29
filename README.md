@@ -1,7 +1,6 @@
 ### History On/Off Switch
 Selectively/Temporary Enable/Disable Browser History
 
-| browser | version                                                                                 |
-| ------- | --------------------------------------------------------------------------------------- |
-| chrome  | [1.1](https://chrome.google.com/webstore/detail/lnmpmbghleceibmgenamnhhahfiebgie?hl=en) |
-| firefox |                                                                                         |
+| Platform         | Version                                                                           |
+| ---------------- | --------------------------------------------------------------------------------- |
+| Chrome Web Store | [1.3](https://chrome.google.com/webstore/detail/lnmpmbghleceibmgenamnhhahfiebgie) |

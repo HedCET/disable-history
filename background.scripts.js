@@ -47,9 +47,9 @@ const _disabledIcon = async (oldValue, newValue) => {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-let disabledPattern;
-const _disabledPattern = (oldValue, newValue) =>
-  disabledPattern = newValue ? new RegExp(newValue) : undefined;
+let blockedPattern;
+const _blockedPattern = (oldValue, newValue) =>
+  blockedPattern = newValue ? new RegExp(newValue) : undefined;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -88,7 +88,7 @@ const removeFromHistory = async (tabId) => {
   if (entries instanceof Set)
     for (const url of entries) {
       if (historyDisabled) await chrome.history.deleteUrl({ url });
-      else if (disabledPattern && url?.match(disabledPattern))
+      else if (blockedPattern && url?.match(blockedPattern))
         await chrome.history.deleteUrl({ url });
 
       if (entries.size === 1) history.delete(tabId);
@@ -110,33 +110,34 @@ chrome.tabs.onRemoved.addListener((tabId) => removeFromHistory(tabId));
 chrome.downloads.onChanged.addListener(({ id, state }) => {
   if (state?.current === "complete")
     if (historyDisabled) chrome.downloads.erase({ id });
-    else if (disabledPattern)
+    else if (blockedPattern)
       chrome.downloads.search({ id }, ([{ url }]) => {
-        if (url?.match(disabledPattern)) chrome.downloads.erase({ id });
+        if (url?.match(blockedPattern))
+          chrome.downloads.erase({ id });
       });
 });
 
 ////////////////////////////////////////////////////////////////////////////////
 
-chrome.storage.sync.get(["enabledIcon", "disabledIcon", "disabledPattern"],
-  ({ enabledIcon, disabledIcon, disabledPattern }) => {
+chrome.storage.sync.get(["enabledIcon", "disabledIcon", "blockedPattern"],
+  ({ enabledIcon, disabledIcon, blockedPattern }) => {
     _enabledIcon(undefined, enabledIcon);
     _disabledIcon(undefined, disabledIcon);
-    _disabledPattern(undefined, disabledPattern);
+    _blockedPattern(undefined, blockedPattern);
   });
 
-chrome.storage.onChanged.addListener(({ enabledIcon, disabledIcon, disabledPattern }) => {
+chrome.storage.onChanged.addListener(({ enabledIcon, disabledIcon, blockedPattern }) => {
   if (enabledIcon) _enabledIcon(enabledIcon.oldValue, enabledIcon.newValue);
   if (disabledIcon) _disabledIcon(disabledIcon.oldValue, disabledIcon.newValue);
-  if (disabledPattern) _disabledPattern(disabledPattern.oldValue, disabledPattern.newValue);
+  if (blockedPattern) _blockedPattern(blockedPattern.oldValue, blockedPattern.newValue);
 });
 
 ////////////////////////////////////////////////////////////////////////////////
 
 const _handleMessage = async ({ type }, sender, sendResponse) => {
   switch (type) {
-    // clear tabs history
-    case "clearActiveHistory":
+    // ignore active tabs history
+    case "ignoreActiveHistory":
       history = new Map();
       sendResponse(true);
       break;
