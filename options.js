@@ -53,14 +53,13 @@ chrome.storage.sync.get(["blockedPattern"],
 
 document.getElementById("applyAndUpdateBlockedPattern").onclick = () => {
   try {
-    const bP = new RegExp(blockedPattern.value); // validation
-    applyBlockedPattern(bP);
+    applyBlockedPattern(new RegExp(blockedPattern.value));
 
     // apply in downloads
     chrome.downloads.search({ limit: 0, urlRegex: blockedPattern.value },
       (downloadItems) => {
         for (const { id, state } of downloadItems)
-          if (['interrupted', 'complete'].includes(state))
+          if (["interrupted", "complete"].includes(state))
             chrome.downloads.erase({ id });
       });
 
@@ -72,22 +71,22 @@ document.getElementById("applyAndUpdateBlockedPattern").onclick = () => {
   }
 };
 
+// recursion
 const applyBlockedPattern = (bP, from, to) => {
   if (bP instanceof RegExp) {
-    const endTime = typeof to === "number" && 0 < to ? to : new Date().getTime();
-    const startTime = endTime - 86400000;
+    let endTime = typeof to === "number" && 0 < to ? to : (new Date()).getTime();
+    const startTime = typeof from === "number" && 0 < from && from < endTime ? from
+      : 0 < endTime - 7776000000 ? endTime - 7776000000 : 0;
 
-    if (typeof from !== "number" || to <= from) from = endTime - 7776000000;
-    if (from < 0) from = 0;
-    if (startTime < from) startTime = from;
-
-    chrome.history.search({ endTime, maxResults: 86400, startTime, text: "" },
+    chrome.history.search({ endTime, maxResults: 1000, startTime, text: "" },
       async (historyItems) => {
-        for (const { url } of historyItems)
+        for (const { lastVisitTime, url } of historyItems) {
           if (url?.match(bP)) await chrome.history.deleteUrl({ url });
+          if (lastVisitTime < endTime) endTime = lastVisitTime;
+        }
 
-        if (historyItems.length && from < startTime)
-          applyBlockedPattern(bP, from, startTime);
+        if (1000 <= historyItems.length && startTime < endTime)
+          applyBlockedPattern(bP, startTime, endTime);
       });
   }
 };
