@@ -1,7 +1,7 @@
 const updateStatus = (element, innerText, className) => {
   if (element instanceof HTMLElement) {
-    element.innerText = innerText ?? "";
-    element.className = className ?? "";
+    element.innerText = innerText || "";
+    element.className = className || "";
   }
 };
 
@@ -49,21 +49,23 @@ const blockedPattern = document.getElementById("blockedPattern");
 const blockedPatternStatus = document.getElementById("blockedPatternStatus");
 
 chrome.storage.sync.get(["blockedPattern"],
-  ({ blockedPattern: bP }) => blockedPattern.value = bP ?? "");
+  ({ blockedPattern: bP }) => blockedPattern.value = bP || "");
 
 document.getElementById("applyAndUpdateBlockedPattern").onclick = () => {
   try {
-    applyBlockedPattern(new RegExp(blockedPattern.value));
+    if (blockedPattern.value) {
+      applyBlockedPattern(new RegExp(blockedPattern.value));
 
-    // apply in downloads
-    chrome.downloads.search({ limit: 0, urlRegex: blockedPattern.value },
-      (downloadItems) => {
-        for (const { id, state } of downloadItems)
-          if (["interrupted", "complete"].includes(state))
-            chrome.downloads.erase({ id });
-      });
+      // apply in downloads
+      chrome.downloads.search({ limit: 0, urlRegex: blockedPattern.value },
+        (downloadItems) => {
+          for (const { id, state } of downloadItems)
+            if (["interrupted", "complete"].includes(state))
+              chrome.downloads.erase({ id });
+        });
+    }
 
-    chrome.storage.sync.set({ blockedPattern: blockedPattern.value });
+    chrome.storage.sync.set({ blockedPattern: blockedPattern.value || "" });
 
     updateStatus(blockedPatternStatus, "success", "text-green-500");
   } catch (e) {
