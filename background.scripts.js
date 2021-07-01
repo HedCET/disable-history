@@ -146,4 +146,4 @@ const _handleMessage = async ({ action }, sender, sendResponse) => {
 
 // inbound messages
 chrome.runtime.onMessage.addListener(_handleMessage);
-// chrome.runtime.onMessageExternal.addListener(_handleMessage);
+chrome.runtime.onMessageExternal.addListener(_handleMessage);
