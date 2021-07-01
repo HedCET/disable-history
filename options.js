@@ -99,7 +99,7 @@ const activeHistoryStatus = document.getElementById("activeHistoryStatus");
 
 document.getElementById("ignoreActiveHistory").onclick = () => {
   chrome.runtime.sendMessage(chrome.runtime.id,
-    { type: "ignoreActiveHistory" },
+    { action: "ignoreActiveHistory" },
     (status) => {
       if (status) updateStatus(activeHistoryStatus, "success", "text-green-500");
       else updateStatus(activeHistoryStatus, "failed", "text-red-500");

@@ -134,8 +134,8 @@ chrome.storage.onChanged.addListener(({ enabledIcon, disabledIcon, blockedPatter
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const _handleMessage = async ({ type }, sender, sendResponse) => {
-  switch (type) {
+const _handleMessage = async ({ action }, sender, sendResponse) => {
+  switch (action) {
     // ignore active tabs history
     case "ignoreActiveHistory":
       history = new Map();
